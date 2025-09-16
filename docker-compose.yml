@@ -3,6 +3,7 @@ services:
     image: apache/hadoop:3
     hostname: namenode
     container_name: namenode
+    user: root
     ports:
       - "9870:9870"
       - "9000:9000"
