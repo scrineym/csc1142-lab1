@@ -1,0 +1,120 @@
+services:
+  namenode:
+    image: apache/hadoop:3
+    hostname: namenode
+    container_name: namenode
+    ports:
+      - "9870:9870"
+      - "9000:9000"
+    environment:
+      - HADOOP_CONF_DIR=/opt/hadoop/etc/hadoop
+    command: >
+      sh -c "
+        if [ ! -d /hadoop/dfs/namenode/current ]; then
+          hdfs namenode -format -force -nonInteractive
+        fi &&
+        hdfs namenode
+      "
+    volumes:
+      - ./core-site.xml:/opt/hadoop/etc/hadoop/core-site.xml
+      - ./hdfs-site.xml:/opt/hadoop/etc/hadoop/hdfs-site.xml
+      - ./yarn-site.xml:/opt/hadoop/etc/hadoop/yarn-site.xml
+      - namenode_data:/hadoop/dfs/namenode
+    networks:
+      - hadoop-net
+
+  datanode1:
+    image: apache/hadoop:3
+    hostname: datanode1
+    container_name: datanode1
+    user: root
+    depends_on:
+      - namenode
+    ports:
+      - "9864:9864"
+    environment:
+      - HADOOP_CONF_DIR=/opt/hadoop/etc/hadoop
+    command: >
+      sh -c "
+        mkdir -p /hadoop/dfs/datanode &&
+        hdfs datanode
+      "
+    volumes:
+      - ./core-site.xml:/opt/hadoop/etc/hadoop/core-site.xml
+      - ./hdfs-site.xml:/opt/hadoop/etc/hadoop/hdfs-site.xml
+      - ./yarn-site.xml:/opt/hadoop/etc/hadoop/yarn-site.xml
+      - datanode1_data:/hadoop/dfs/datanode
+    networks:
+      - hadoop-net
+
+  datanode2:
+    image: apache/hadoop:3
+    hostname: datanode2
+    container_name: datanode2
+    user: root
+    depends_on:
+      - namenode
+    ports:
+      - "9865:9864"
+    environment:
+      - HADOOP_CONF_DIR=/opt/hadoop/etc/hadoop
+    command: >
+      sh -c "
+        mkdir -p /hadoop/dfs/datanode &&
+        hdfs datanode
+      "
+    volumes:
+      - ./core-site.xml:/opt/hadoop/etc/hadoop/core-site.xml
+      - ./hdfs-site.xml:/opt/hadoop/etc/hadoop/hdfs-site.xml
+      - ./yarn-site.xml:/opt/hadoop/etc/hadoop/yarn-site.xml
+      - datanode2_data:/hadoop/dfs/datanode
+    networks:
+      - hadoop-net
+
+  resourcemanager:
+    image: apache/hadoop:3
+    hostname: resourcemanager
+    container_name: resourcemanager
+    depends_on:
+      - namenode
+    ports:
+      - "8088:8088"
+      - "8030:8030"
+      - "8031:8031"
+      - "8032:8032"
+    environment:
+      - HADOOP_CONF_DIR=/opt/hadoop/etc/hadoop
+    command: ["yarn", "resourcemanager"]
+    volumes:
+      - ./core-site.xml:/opt/hadoop/etc/hadoop/core-site.xml
+      - ./hdfs-site.xml:/opt/hadoop/etc/hadoop/hdfs-site.xml
+      - ./yarn-site.xml:/opt/hadoop/etc/hadoop/yarn-site.xml
+    networks:
+      - hadoop-net
+
+  nodemanager:
+    image: apache/hadoop:3
+    hostname: nodemanager
+    container_name: nodemanager
+    depends_on:
+      - resourcemanager
+    ports:
+      - "8042:8042"
+    environment:
+      - HADOOP_CONF_DIR=/opt/hadoop/etc/hadoop
+    command: ["yarn", "nodemanager"]
+    volumes:
+      - ./core-site.xml:/opt/hadoop/etc/hadoop/core-site.xml
+      - ./hdfs-site.xml:/opt/hadoop/etc/hadoop/hdfs-site.xml
+      - ./yarn-site.xml:/opt/hadoop/etc/hadoop/yarn-site.xml
+    networks:
+      - hadoop-net
+
+volumes:
+  namenode_data:
+  datanode1_data:
+  datanode2_data:
+
+networks:
+  hadoop-net:
+    driver: bridge
